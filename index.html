@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador UVA · Residencias · Uno Valle Escondido</title>
+<meta name="description" content="Simulador de financiamiento en UVAs para las Residencias de Uno Valle Escondido.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* Paleta tomada de la guía comercial de Uno Valle Escondido */
+:root {
+  --arena: #bfb3a3;
+  --arena-claro: #e9e3da;
+  --arena-suave: #f5f2ed;
+  --tinta: #2a2826;
+  --tinta-suave: #5f5952;
+  --gris: #8c847a;
+  --linea: #d8d0c4;
+  --fondo: #faf8f5;
+  --blanco: #ffffff;
+  --error: #a23b2c;
+  --error-fondo: #fbeeeb;
+  --ok: #3f6b4a;
+  --ok-fondo: #edf4ee;
+  --aviso: #8a6514;
+  --aviso-fondo: #fbf4e3;
+  --radio: 10px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--fondo); color: var(--tinta); font-family: 'Poppins', system-ui, sans-serif; font-weight: 300; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+strong { font-weight: 500; }
+[hidden] { display: none !important; }
+
+.contenedor { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+.encabezado { background: var(--blanco); border-bottom: 1px solid var(--linea); }
+.encabezado .contenedor { display: flex; align-items: center; gap: 14px; padding-top: 14px; padding-bottom: 14px; }
+.marca__logo { width: 56px; height: 56px; flex: none; border-radius: 50%; background: var(--arena); display: grid; place-items: center; font-size: 22px; letter-spacing: -0.5px; box-shadow: 0 0 0 3px var(--blanco), 0 0 0 4px var(--arena); }
+.marca__sub { display: block; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--gris); }
+.marca__titulo { display: block; font-size: 17px; font-weight: 400; }
+
+.pie { color: var(--gris); font-size: 13px; padding-top: 24px; padding-bottom: 40px; border-top: 1px solid var(--linea); margin-top: 32px; }
+
+.pagina { display: flex; flex-direction: column; gap: 20px; padding-top: 24px; }
+.panel { background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio); padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+.panel--mercado { background: var(--arena-suave); }
+.panel__cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.eyebrow { margin: 0; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gris); font-weight: 400; }
+.ayuda { margin: 0; font-size: 13px; color: var(--gris); }
+.fuente { font-size: 12px; color: var(--gris); }
+
+.grilla { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.campo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.etiqueta { font-size: 13px; color: var(--tinta-suave); font-weight: 400; display: flex; align-items: center; gap: 8px; }
+
+.entrada { display: flex; align-items: stretch; border: 1px solid var(--linea); border-radius: 8px; background: var(--blanco); overflow: hidden; }
+.entrada:focus-within { border-color: var(--tinta-suave); }
+.entrada input { width: 100%; min-width: 0; border: 0; padding: 10px 12px; background: transparent; outline: none; font-variant-numeric: tabular-nums; }
+.entrada__prefijo { display: grid; place-items: center; padding: 0 12px; background: var(--arena-suave); color: var(--gris); font-size: 13px; border-right: 1px solid var(--linea); }
+.entrada--grande input { font-size: 22px; font-weight: 400; padding: 8px 12px; }
+.entrada--manual { border-color: var(--aviso); }
+.entrada--error { border-color: var(--error); }
+
+.insignia { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--ok-fondo); color: var(--ok); }
+.insignia--manual { background: var(--aviso-fondo); color: var(--aviso); }
+
+.mercado { display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: start; }
+.dato-fijo { display: flex; flex-direction: column; gap: 6px; padding-left: 16px; border-left: 1px solid var(--linea); }
+.dato-fijo__valor { font-size: 22px; font-weight: 400; padding: 9px 0; }
+
+.boton { border: 1px solid var(--arena); background: var(--blanco); color: var(--tinta); padding: 11px 20px; border-radius: 999px; cursor: pointer; font-weight: 400; }
+.boton:hover:not(:disabled) { background: var(--arena-claro); }
+.boton:disabled { opacity: 0.45; cursor: not-allowed; }
+.enlace { border: 0; background: none; padding: 0; color: var(--tinta); text-decoration: underline; cursor: pointer; font-size: inherit; }
+
+.alerta { border-radius: 8px; padding: 12px 14px; font-size: 14px; border-left: 3px solid; }
+.alerta ul { margin: 6px 0; padding-left: 18px; }
+.alerta--error { background: var(--error-fondo); border-color: var(--error); color: var(--error); }
+.alerta--ok { background: var(--ok-fondo); border-color: var(--ok); color: var(--ok); }
+.alerta--info { background: var(--arena-suave); border-color: var(--arena); color: var(--tinta-suave); }
+.alerta--aviso { background: var(--aviso-fondo); border-color: var(--aviso); color: var(--aviso); }
+
+.barra { position: relative; display: flex; height: 40px; border: 1px solid var(--tinta); font-size: 13px; }
+.barra__entrega { background: var(--arena); display: flex; align-items: center; padding: 0 12px; white-space: nowrap; overflow: hidden; transition: width 0.2s; }
+.barra__financiado { flex: 1; display: flex; align-items: center; padding: 0 12px; white-space: nowrap; overflow: hidden; background: var(--blanco); }
+.barra__marca { position: absolute; left: 50%; top: -6px; bottom: -6px; border-left: 2px dashed var(--tinta); }
+
+.resumen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.dato { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; background: var(--arena-suave); border-radius: 8px; min-width: 0; }
+.dato__valor { font-size: 18px; font-weight: 400; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.tarjetas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.tarjeta { display: flex; flex-direction: column; gap: 6px; padding: 22px; border-radius: var(--radio); border: 1px solid var(--arena); background: var(--blanco); min-width: 0; }
+.tarjeta__plazo { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gris); }
+.tarjeta__etiqueta { font-size: 14px; color: var(--tinta-suave); margin-top: 6px; }
+.tarjeta__valor { font-size: 40px; font-weight: 300; line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tarjeta__valor small { font-size: 16px; color: var(--gris); }
+.tarjeta__equivalente { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 22px; font-weight: 400; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.tarjeta__nota { font-size: 12px; color: var(--gris); }
+.tarjeta__linea { font-size: 13px; color: var(--tinta-suave); border-top: 1px solid var(--linea); padding-top: 10px; margin-top: 6px; }
+
+@media (max-width: 760px) {
+  .grilla, .resumen, .tarjetas, .mercado { grid-template-columns: 1fr; }
+  .dato-fijo { padding-left: 0; border-left: 0; }
+  .tarjeta__valor { font-size: 34px; }
+  .tarjeta__equivalente { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+<header class="encabezado">
+  <div class="contenedor">
+    <span class="marca__logo">uno</span>
+    <span>
+      <span class="marca__sub">Valle Escondido</span>
+      <span class="marca__titulo">Simulador de financiamiento · Residencias</span>
+    </span>
+  </div>
+</header>
+
+<main class="contenedor pagina">
+
+  <!-- Valores de referencia -->
+  <section class="panel panel--mercado" aria-label="Valores de referencia">
+    <div class="panel__cabecera">
+      <div>
+        <p class="eyebrow">Valores de referencia</p>
+        <p class="ayuda">Se obtienen automáticamente. Podés escribir otro valor para reemplazarlo.</p>
+      </div>
+      <button type="button" class="boton" id="btnActualizar">Actualizar cotizaciones</button>
+    </div>
+
+    <div class="mercado">
+      <label class="campo">
+        <span class="etiqueta">Dólar MEP <span class="insignia" id="mepInsignia">Cargando…</span></span>
+        <div class="entrada entrada--grande" id="mepEntrada">
+          <span class="entrada__prefijo">$</span>
+          <input id="mep" inputmode="decimal" placeholder="Ingresar valor" autocomplete="off">
+        </div>
+        <span class="fuente" id="mepFuente">Consultando…</span>
+      </label>
+
+      <label class="campo">
+        <span class="etiqueta">Valor UVA <span class="insignia" id="uvaInsignia">Cargando…</span></span>
+        <div class="entrada entrada--grande" id="uvaEntrada">
+          <span class="entrada__prefijo">$</span>
+          <input id="uva" inputmode="decimal" placeholder="Ingresar valor" autocomplete="off">
+        </div>
+        <span class="fuente" id="uvaFuente">Consultando…</span>
+      </label>
+
+      <div class="dato-fijo">
+        <span class="etiqueta">Tasa</span>
+        <span class="dato-fijo__valor">UVA + 7,5%</span>
+        <span class="fuente">anual</span>
+      </div>
+    </div>
+
+    <div class="alerta alerta--aviso" id="erroresMercado" hidden></div>
+  </section>
+
+  <!-- Operación -->
+  <section class="panel" aria-label="Datos de la operación">
+    <p class="eyebrow">Operación</p>
+    <div class="grilla">
+      <label class="campo">
+        <span class="etiqueta">Valor total de la Residencia en USD</span>
+        <div class="entrada" id="valorEntrada">
+          <span class="entrada__prefijo">USD</span>
+          <input id="valor" inputmode="decimal" placeholder="0,00" autocomplete="off">
+        </div>
+      </label>
+
+      <label class="campo">
+        <span class="etiqueta">Monto a financiar en USD</span>
+        <div class="entrada" id="financiarEntrada">
+          <span class="entrada__prefijo">USD</span>
+          <input id="financiar" inputmode="decimal" placeholder="0,00" autocomplete="off">
+        </div>
+        <span class="ayuda" id="maximoAyuda" hidden>
+          Máximo financiable: <span id="maximoTexto"></span>
+          <button type="button" class="enlace" id="btnMaximo">usar máximo</button>
+        </span>
+      </label>
+    </div>
+
+    <div class="barra" id="barra" aria-hidden="true" hidden>
+      <div class="barra__entrega" id="barraEntrega">Entrega inicial</div>
+      <div class="barra__financiado">Saldo · hasta 50% (tope 150.000 UVAs)</div>
+      <div class="barra__marca"></div>
+    </div>
+
+    <div id="alertaOperacion"></div>
+  </section>
+
+  <!-- Resultado -->
+  <section class="panel" id="resultado" aria-label="Resultado" hidden>
+    <p class="eyebrow">Resultado</p>
+    <div class="resumen">
+      <div class="dato">
+        <span class="etiqueta">Monto a financiar (ARS)</span>
+        <span class="dato__valor" id="resArs"></span>
+        <span class="fuente" id="resArsDetalle"></span>
+      </div>
+      <div class="dato">
+        <span class="etiqueta">Crédito en UVAs</span>
+        <span class="dato__valor" id="resUvas"></span>
+        <span class="fuente" id="resUvasDetalle"></span>
+      </div>
+    </div>
+    <div class="tarjetas" id="tarjetas"></div>
+    <p class="ayuda">
+      Sistema francés: cuotas iguales y mensuales expresadas en UVAs. El importe en pesos de cada cuota se actualiza
+      según el valor de la UVA del día de pago.
+    </p>
+  </section>
+</main>
+
+<footer class="pie contenedor">República China 1045 · Valle Escondido, Córdoba</footer>
+
+<script>
+'use strict';
+
+/* =====================================================================
+   CONFIGURACIÓN — reglas comerciales de las Residencias
+   ===================================================================== */
+const REGLAS = {
+  porcentajeMaxFinanciado: 0.5,  // entrega inicial mínima 50% → financiado hasta 50%
+  topeCreditoUvas: 150000,       // tope del saldo a financiar por unidad
+  tasaAnual: 0.075,              // UVA + 7,5% anual
+  plazos: [60, 120],             // 5 y 10 años
+};
+const TASA_MENSUAL = REGLAS.tasaAnual / 12; // 0,00625
+
+/* Fuentes de cotización (todas aceptan consultas desde el navegador). */
+const FUENTES = {
+  mep: { url: 'https://dolarapi.com/v1/dolares/bolsa', nombre: 'DolarAPI' },
+  uva: { url: 'https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/31', nombre: 'BCRA' },
+  uvaRespaldo: { url: 'https://api.argentinadatos.com/v1/finanzas/indices/uva', nombre: 'ArgentinaDatos' },
+};
+const TIMEOUT_MS = 10000;
+
+/* =====================================================================
+   CÁLCULO
+   ===================================================================== */
+/** Cuota del sistema francés: C · i(1+i)^n / ((1+i)^n − 1). */
+function cuotaFrancesa(capital, i, n) {
+  const f = Math.pow(1 + i, n);
+  return (capital * (i * f)) / (f - 1);
+}
+
+function topeCreditoUsd(mep, uva) {
+  return mep > 0 && uva > 0 ? (REGLAS.topeCreditoUvas * uva) / mep : NaN;
+}
+
+/** Máximo financiable: el menor entre el 50% del valor y el tope de 150.000 UVAs. */
+function maximoFinanciableUsd(valor, mep, uva) {
+  if (!(valor > 0)) return NaN;
+  const porPorcentaje = valor * REGLAS.porcentajeMaxFinanciado;
+  const porTope = topeCreditoUsd(mep, uva);
+  return Number.isFinite(porTope) ? Math.min(porPorcentaje, porTope) : porPorcentaje;
+}
+
+function validarMontos(valor, financiar, mep, uva) {
+  const errores = { valor: [], financiar: [] };
+  if (!(valor > 0)) errores.valor.push('Ingresá el valor total de la Residencia en USD.');
+  if (!(financiar > 0)) {
+    errores.financiar.push('Ingresá el monto a financiar en USD.');
+    return errores;
+  }
+  if (valor > 0 && financiar > valor * REGLAS.porcentajeMaxFinanciado + 1e-9) {
+    errores.financiar.push('El monto a financiar no puede superar el 50% del valor de la Residencia (la entrega inicial mínima es del 50%).');
+  }
+  if (mep > 0 && uva > 0) {
+    const creditoUvas = (financiar * mep) / uva;
+    if (creditoUvas > REGLAS.topeCreditoUvas + 1e-6) {
+      errores.financiar.push(`El saldo a financiar tiene un tope de 150.000 UVAs por unidad (este monto equivale a ${fmtNum(creditoUvas, 2)} UVAs).`);
+    }
+  }
+  return errores;
+}
+
+function simular(valor, financiar, mep, uva) {
+  const montoArs = financiar * mep;
+  const creditoUvas = montoArs / uva;
+  return {
+    entregaUsd: valor - financiar,
+    porcentajeEntrega: (valor - financiar) / valor,
+    montoArs,
+    creditoUvas,
+    planes: REGLAS.plazos.map((n) => {
+      const cuotaUvas = cuotaFrancesa(creditoUvas, TASA_MENSUAL, n);
+      return {
+        plazo: n,
+        anios: n / 12,
+        cuotaUvas,
+        cuotaArs: cuotaUvas * uva,
+        cuotaUsd: (cuotaUvas * uva) / mep,
+        totalUvas: cuotaUvas * n,
+        interesesUvas: cuotaUvas * n - creditoUvas,
+      };
+    }),
+  };
+}
+
+/* =====================================================================
+   FORMATO (convención argentina: 1.234.567,89)
+   ===================================================================== */
+function fmtNum(n, dec = 2) {
+  if (!Number.isFinite(n)) return '—';
+  return n.toLocaleString('es-AR', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+const fmtUsd = (n, dec = 2) => `USD ${fmtNum(n, dec)}`;
+const fmtArs = (n, dec = 2) => `$ ${fmtNum(n, dec)}`;
+const fmtPct = (n) => `${fmtNum(n * 100, 1)}%`;
+
+/** Acepta "1.539,37", "1539,37", "1539.37" y "150.000" (punto + 3 dígitos = miles). */
+function parseNumero(texto) {
+  let s = String(texto).trim().replace(/USD|US\$|\$|\s/gi, '');
+  if (!s) return NaN;
+  if (s.includes(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else {
+    const partes = s.split('.');
+    if (partes.length > 2 || (partes.length === 2 && partes[1].length === 3)) s = partes.join('');
+  }
+  if (!/^-?\d*\.?\d+$/.test(s)) return NaN;
+  return Number(s);
+}
+
+function fmtFecha(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  return `${d}/${m}/${y}`;
+}
+
+/** Fecha YYYY-MM-DD en hora de Argentina, desplazada `dias` días. */
+function fechaAR(dias = 0) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+    .format(new Date(Date.now() + dias * 86400000));
+}
+
+/* =====================================================================
+   COTIZACIONES AUTOMÁTICAS
+   ===================================================================== */
+async function getJson(url) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function obtenerMep() {
+  const d = await getJson(FUENTES.mep.url);
+  if (!(d.venta > 0)) throw new Error('respuesta sin valor');
+  const fecha = new Date(d.fechaActualizacion);
+  const hora = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' });
+  return { valor: d.venta, fecha: d.fechaActualizacion.slice(0, 10), hora, fuente: FUENTES.mep.nombre };
+}
+
+/* El BCRA publica la UVA con días de anticipación: se toma la vigente hoy. */
+function uvaVigente(serie, fuente) {
+  const hoy = fechaAR();
+  const vigente = serie
+    .filter((d) => d.fecha <= hoy && d.valor > 0)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))[0];
+  if (!vigente) throw new Error('respuesta sin valor');
+  return { valor: vigente.valor, fecha: vigente.fecha, fuente };
+}
+
+async function obtenerUva() {
+  try {
+    const d = await getJson(`${FUENTES.uva.url}?desde=${fechaAR(-15)}&hasta=${fechaAR()}`);
+    const serie = (d.results || []).find((r) => r.idVariable === 31)?.detalle || [];
+    return uvaVigente(serie, FUENTES.uva.nombre);
+  } catch (e) {
+    const d = await getJson(FUENTES.uvaRespaldo.url);
+    const r = uvaVigente(d.slice(-30), FUENTES.uvaRespaldo.nombre);
+    r.aviso = `BCRA no respondió (${e.message}); se usó ArgentinaDatos.`;
+    return r;
+  }
+}
+
+/* =====================================================================
+   INTERFAZ
+   ===================================================================== */
+const $ = (id) => document.getElementById(id);
+const estado = {
+  mep: { auto: null, manual: false },
+  uva: { auto: null, manual: false },
+};
+
+function pintarCotizacion(clave) {
+  const { auto, manual } = estado[clave];
+  const insignia = $(`${clave}Insignia`);
+  insignia.textContent = manual ? 'Manual' : 'Automático';
+  insignia.classList.toggle('insignia--manual', manual);
+  $(`${clave}Entrada`).classList.toggle('entrada--manual', manual);
+
+  const fuente = $(`${clave}Fuente`);
+  fuente.textContent = '';
+  if (!auto) {
+    fuente.textContent = 'Sin dato automático';
+    return;
+  }
+  fuente.append(`${auto.fuente} · ${fmtFecha(auto.fecha)}${auto.hora ? ' ' + auto.hora : ''}`);
+  if (manual) {
+    fuente.append(` · automático: ${fmtArs(auto.valor)} `);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'enlace';
+    btn.textContent = 'restaurar';
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      estado[clave].manual = false;
+      $(clave).value = fmtNum(auto.valor, 2);
+      pintarCotizacion(clave);
+      calcular();
+    });
+    fuente.append(btn);
+  }
+}
+
+async function cargarCotizaciones() {
+  const btn = $('btnActualizar');
+  btn.disabled = true;
+  btn.textContent = 'Actualizando…';
+  const errores = [];
+
+  const [mep, uva] = await Promise.allSettled([obtenerMep(), obtenerUva()]);
+  for (const [clave, r, nombre] of [['mep', mep, 'Dólar MEP'], ['uva', uva, 'UVA']]) {
+    if (r.status === 'fulfilled') {
+      estado[clave].auto = r.value;
+      if (r.value.aviso) errores.push(r.value.aviso);
+      if (!estado[clave].manual) $(clave).value = fmtNum(r.value.valor, 2);
+    } else {
+      errores.push(`No se pudo obtener ${nombre}: ${r.reason?.message || r.reason}. Ingresalo manualmente.`);
+      if (!estado[clave].auto) estado[clave].manual = true;
+    }
+    pintarCotizacion(clave);
+  }
+
+  const caja = $('erroresMercado');
+  caja.hidden = errores.length === 0;
+  caja.textContent = '';
+  if (errores.length) {
+    const t = document.createElement('strong');
+    t.textContent = 'Atención con las fuentes automáticas:';
+    const ul = document.createElement('ul');
+    errores.forEach((m) => { const li = document.createElement('li'); li.textContent = m; ul.append(li); });
+    caja.append(t, ul);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Actualizar cotizaciones';
+  calcular();
+}
+
+function alerta(tipo, html) {
+  return `<div class="alerta alerta--${tipo}"${tipo === 'error' ? ' role="alert"' : ''}>${html}</div>`;
+}
+
+function calcular() {
+  const mep = parseNumero($('mep').value);
+  const uva = parseNumero($('uva').value);
+  const valor = parseNumero($('valor').value);
+  const financiar = parseNumero($('financiar').value);
+  const hayValor = $('valor').value.trim() !== '';
+  const hayFinanciar = $('financiar').value.trim() !== '';
+
+  const errores = validarMontos(valor, financiar, mep, uva);
+  const errValor = hayValor ? errores.valor : [];
+  const errFin = hayFinanciar ? errores.financiar : [];
+  $('valorEntrada').classList.toggle('entrada--error', errValor.length > 0);
+  $('financiarEntrada').classList.toggle('entrada--error', errFin.length > 0);
+
+  // Máximo financiable
+  const maximo = maximoFinanciableUsd(valor, mep, uva);
+  const topeUsd = topeCreditoUsd(mep, uva);
+  const limitaElTope = Number.isFinite(topeUsd) && valor > 0 && topeUsd < valor / 2;
+  $('maximoAyuda').hidden = !Number.isFinite(maximo);
+  $('maximoTexto').textContent = Number.isFinite(maximo)
+    ? `${fmtUsd(maximo)} ${limitaElTope ? '(tope 150.000 UVAs)' : '(50% del valor)'}`
+    : '';
+
+  // Barra entrega / financiado
+  const mostrarBarra = valor > 0 && financiar > 0;
+  $('barra').hidden = !mostrarBarra;
+  if (mostrarBarra) $('barraEntrega').style.width = `${Math.max(0, Math.min(100, (1 - financiar / valor) * 100))}%`;
+
+  // Alertas
+  const sinErrores = errores.valor.length === 0 && errores.financiar.length === 0;
+  const mercadoValido = mep > 0 && uva > 0;
+  let html = errValor.map((m) => alerta('error', m)).join('');
+  if (errFin.length) {
+    let cuerpo = errFin.map((m) => `<div>${m}</div>`).join('');
+    if (Number.isFinite(maximo)) {
+      cuerpo += `<div>Para este valor, el monto a financiar no puede superar <strong>${fmtUsd(maximo)}</strong> y la entrega inicial mínima es de <strong>${fmtUsd(valor - maximo)}</strong>.</div>`;
+    }
+    html += alerta('error', cuerpo);
+  } else if (sinErrores && mercadoValido) {
+    html += alerta('ok', `Entrega inicial: <strong>${fmtUsd(valor - financiar)}</strong> (${fmtPct((valor - financiar) / valor)} del valor). Cumple el mínimo del 50%.`);
+  } else {
+    html += alerta('info', `<strong>Entrega inicial mínima:</strong> el cliente debe abonar al menos el 50% del valor de la Residencia. El saldo a financiar es de hasta el 50%, con un tope de 150.000 UVAs por unidad${Number.isFinite(topeUsd) ? ` (≈ ${fmtUsd(topeUsd)} con los valores de hoy)` : ''}.`);
+  }
+  $('alertaOperacion').innerHTML = html;
+
+  // Resultado
+  const r = sinErrores && mercadoValido ? simular(valor, financiar, mep, uva) : null;
+  $('resultado').hidden = !r;
+  if (!r) return;
+  $('resArs').textContent = fmtArs(r.montoArs);
+  $('resArsDetalle').textContent = `${fmtUsd(financiar)} × ${fmtArs(mep)}`;
+  $('resUvas').textContent = `${fmtNum(r.creditoUvas, 2)} UVA`;
+  $('resUvasDetalle').textContent = `${fmtArs(r.montoArs, 0)} ÷ ${fmtArs(uva)}`;
+  $('tarjetas').innerHTML = r.planes.map((p) => `
+    <div class="tarjeta">
+      <span class="tarjeta__plazo">${p.anios} años · ${p.plazo} cuotas</span>
+      <span class="tarjeta__etiqueta">Primera cuota</span>
+      <span class="tarjeta__valor">${fmtNum(p.cuotaUvas, 2)} <small>UVA</small></span>
+      <span class="tarjeta__equivalente"><span>≈ ${fmtArs(p.cuotaArs)}</span><span>≈ ${fmtUsd(p.cuotaUsd)}</span></span>
+      <span class="tarjeta__nota">Equivalentes a los valores de hoy</span>
+      <span class="tarjeta__linea">Total a pagar: ${fmtNum(p.totalUvas, 2)} UVA · Intereses: ${fmtNum(p.interesesUvas, 2)} UVA</span>
+    </div>`).join('');
+}
+
+function formatearAlSalir(input) {
+  const n = parseNumero(input.value);
+  if (Number.isFinite(n)) input.value = fmtNum(n, 2);
+}
+
+/* Eventos */
+for (const clave of ['mep', 'uva']) {
+  $(clave).addEventListener('input', () => {
+    estado[clave].manual = true;
+    pintarCotizacion(clave);
+    calcular();
+  });
+  $(clave).addEventListener('blur', (e) => { formatearAlSalir(e.target); calcular(); });
+}
+for (const id of ['valor', 'financiar']) {
+  $(id).addEventListener('input', calcular);
+  $(id).addEventListener('blur', (e) => { formatearAlSalir(e.target); calcular(); });
+}
+$('btnMaximo').addEventListener('click', (e) => {
+  e.preventDefault();
+  const maximo = maximoFinanciableUsd(parseNumero($('valor').value), parseNumero($('mep').value), parseNumero($('uva').value));
+  if (Number.isFinite(maximo)) {
+    $('financiar').value = fmtNum(Math.floor(maximo * 100) / 100, 2); // hacia abajo para no pasarse del tope
+    calcular();
+  }
+});
+$('btnActualizar').addEventListener('click', cargarCotizaciones);
+
+cargarCotizaciones();
+</script>
+</body>
+</html>
