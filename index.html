@@ -48,20 +48,27 @@ strong { font-weight: 500; }
 .pagina { display: flex; flex-direction: column; gap: 20px; padding-top: 24px; }
 .panel { background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio); padding: 22px; display: flex; flex-direction: column; gap: 16px; }
 .panel--mercado { background: var(--arena-suave); }
+.panel--operacion { padding: 28px; gap: 20px; }
 .panel__cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
 .eyebrow { margin: 0; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gris); font-weight: 400; }
 .ayuda { margin: 0; font-size: 13px; color: var(--gris); }
 .fuente { font-size: 12px; color: var(--gris); }
 
-.grilla { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grilla { display: grid; gap: 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .campo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .etiqueta { font-size: 13px; color: var(--tinta-suave); font-weight: 400; display: flex; align-items: center; gap: 8px; }
+.etiqueta--grande { font-size: 15px; color: var(--tinta); }
 
 .entrada { display: flex; align-items: stretch; border: 1px solid var(--linea); border-radius: 8px; background: var(--blanco); overflow: hidden; }
 .entrada:focus-within { border-color: var(--tinta-suave); }
 .entrada input { width: 100%; min-width: 0; border: 0; padding: 10px 12px; background: transparent; outline: none; font-variant-numeric: tabular-nums; }
 .entrada__prefijo { display: grid; place-items: center; padding: 0 12px; background: var(--arena-suave); color: var(--gris); font-size: 13px; border-right: 1px solid var(--linea); }
 .entrada--grande input { font-size: 22px; font-weight: 400; padding: 8px 12px; }
+/* Cuadros de montos (operación): más grandes y legibles */
+.entrada--monto { border-width: 2px; border-radius: 10px; }
+.entrada--monto input { font-size: 30px; font-weight: 400; padding: 14px 16px; color: var(--tinta); }
+.entrada--monto .entrada__prefijo { font-size: 16px; padding: 0 16px; font-weight: 400; }
+.entrada--monto:focus-within { border-color: var(--tinta); }
 .entrada--manual { border-color: var(--aviso); }
 .entrada--error { border-color: var(--error); }
 
@@ -95,7 +102,8 @@ strong { font-weight: 500; }
 
 .tarjetas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .tarjeta { display: flex; flex-direction: column; gap: 6px; padding: 22px; border-radius: var(--radio); border: 1px solid var(--arena); background: var(--blanco); min-width: 0; }
-.tarjeta__plazo { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gris); }
+/* Plazo resaltado: negro y más grande */
+.tarjeta__plazo { font-size: 20px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #000; padding-bottom: 10px; border-bottom: 2px solid #000; }
 .tarjeta__etiqueta { font-size: 14px; color: var(--tinta-suave); margin-top: 6px; }
 .tarjeta__valor { font-size: 40px; font-weight: 300; line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .tarjeta__valor small { font-size: 16px; color: var(--gris); }
@@ -106,6 +114,9 @@ strong { font-weight: 500; }
 @media (max-width: 760px) {
   .grilla, .resumen, .tarjetas, .mercado { grid-template-columns: 1fr; }
   .dato-fijo { padding-left: 0; border-left: 0; }
+  .panel--operacion { padding: 22px; }
+  .entrada--monto input { font-size: 26px; }
+  .tarjeta__plazo { font-size: 18px; }
   .tarjeta__valor { font-size: 34px; }
   .tarjeta__equivalente { font-size: 19px; }
 }
@@ -165,20 +176,20 @@ strong { font-weight: 500; }
   </section>
 
   <!-- Operación -->
-  <section class="panel" aria-label="Datos de la operación">
+  <section class="panel panel--operacion" aria-label="Datos de la operación">
     <p class="eyebrow">Operación</p>
     <div class="grilla">
       <label class="campo">
-        <span class="etiqueta">Valor total de la Residencia en USD</span>
-        <div class="entrada" id="valorEntrada">
+        <span class="etiqueta etiqueta--grande">Valor total de la Residencia en USD</span>
+        <div class="entrada entrada--monto" id="valorEntrada">
           <span class="entrada__prefijo">USD</span>
           <input id="valor" inputmode="decimal" placeholder="0,00" autocomplete="off">
         </div>
       </label>
 
       <label class="campo">
-        <span class="etiqueta">Monto a financiar en USD</span>
-        <div class="entrada" id="financiarEntrada">
+        <span class="etiqueta etiqueta--grande">Monto a financiar en USD</span>
+        <div class="entrada entrada--monto" id="financiarEntrada">
           <span class="entrada__prefijo">USD</span>
           <input id="financiar" inputmode="decimal" placeholder="0,00" autocomplete="off">
         </div>
@@ -331,6 +342,38 @@ function parseNumero(texto) {
   }
   if (!/^-?\d*\.?\d+$/.test(s)) return NaN;
   return Number(s);
+}
+
+/**
+ * Separador de miles mientras se escribe (1.234.567,89).
+ * Mantiene la posición del cursor contando los dígitos a su izquierda.
+ */
+function formatearMientrasEscribe(input, ev) {
+  const original = input.value;
+  const cursor = input.selectionStart ?? original.length;
+  const digitosAntes = original.slice(0, cursor).replace(/[^\d,]/g, '').length;
+
+  // Si el usuario tipeó un punto, lo tomamos como coma decimal.
+  let v = original;
+  if (ev && ev.data === '.' && !v.includes(',')) v = v.replace(/\.(?=[^.]*$)/, ',');
+  v = v.replace(/[^\d,]/g, '');
+
+  const idx = v.indexOf(',');
+  let ent = idx >= 0 ? v.slice(0, idx) : v;
+  const dec = idx >= 0 ? v.slice(idx + 1).replace(/,/g, '').slice(0, 2) : null;
+  ent = ent.replace(/^0+(?=\d)/, '');
+  const entFmt = ent.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const nuevo = dec === null ? entFmt : `${entFmt},${dec}`;
+
+  input.value = nuevo;
+
+  // Reubicar el cursor después de la misma cantidad de dígitos/coma
+  let pos = 0, cont = 0;
+  while (pos < nuevo.length && cont < digitosAntes) {
+    if (/[\d,]/.test(nuevo[pos])) cont++;
+    pos++;
+  }
+  try { input.setSelectionRange(pos, pos); } catch (_) {}
 }
 
 function fmtFecha(iso) {
@@ -543,7 +586,7 @@ for (const clave of ['mep', 'uva']) {
   $(clave).addEventListener('blur', (e) => { formatearAlSalir(e.target); calcular(); });
 }
 for (const id of ['valor', 'financiar']) {
-  $(id).addEventListener('input', calcular);
+  $(id).addEventListener('input', (e) => { formatearMientrasEscribe(e.target, e); calcular(); });
   $(id).addEventListener('blur', (e) => { formatearAlSalir(e.target); calcular(); });
 }
 $('btnMaximo').addEventListener('click', (e) => {
